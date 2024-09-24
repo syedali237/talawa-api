@@ -54,6 +54,8 @@ export const sendMembershipRequest: MutationResolvers["sendMembershipRequest"] =
       _id: context.userId,
     });
 
+    console.log("User exists:", userExists);
+
     // Checks whether user exists.
     if (!userExists) {
       throw new errors.NotFoundError(
@@ -77,13 +79,22 @@ export const sendMembershipRequest: MutationResolvers["sendMembershipRequest"] =
     }
 
     // Checks if the user is blocked
+
     const user = await User.findById(context.userId).lean();
+    if (user === null) {
+      throw new errors.NotFoundError(
+        requestContext.translate(USER_NOT_FOUND_ERROR.MESSAGE),
+        USER_NOT_FOUND_ERROR.CODE,
+        USER_NOT_FOUND_ERROR.PARAM,
+      );
+    }
+
     if (
-      user !== null &&
       organization.blockedUsers.some((blockedUser) =>
         new mongoose.Types.ObjectId(blockedUser.toString()).equals(user._id),
       )
     ) {
+      console.log("User is blocked");
       throw new errors.UnauthorizedError(
         requestContext.translate(USER_NOT_AUTHORIZED_ERROR.MESSAGE),
         USER_NOT_AUTHORIZED_ERROR.CODE,
@@ -97,7 +108,24 @@ export const sendMembershipRequest: MutationResolvers["sendMembershipRequest"] =
       organization: organization._id,
     });
 
+    // console.log("Membership request already exists:", membershipRequestExists);
+
     if (membershipRequestExists) {
+      // Check if the request is already in the user's document
+      if (!user.membershipRequests.includes(membershipRequestExists._id)) {
+        // If it's not in the user's document, add it
+        await User.findByIdAndUpdate(
+          context.userId,
+          {
+            $push: {
+              membershipRequests: membershipRequestExists._id,
+            },
+          },
+          { new: true, runValidators: true },
+        );
+        console.log("Added existing membership request to user's document");
+      }
+
       throw new errors.ConflictError(
         requestContext.translate(MEMBERSHIP_REQUEST_ALREADY_EXISTS.MESSAGE),
         MEMBERSHIP_REQUEST_ALREADY_EXISTS.CODE,
@@ -105,12 +133,13 @@ export const sendMembershipRequest: MutationResolvers["sendMembershipRequest"] =
       );
     }
 
+    // Creating Membership Request
     const createdMembershipRequest = await MembershipRequest.create({
       user: context.userId,
       organization: organization._id,
     });
 
-    // add membership request to organization
+    // Updating Membership Request in organization
     const updatedOrganization = await Organization.findOneAndUpdate(
       {
         _id: organization._id,
@@ -129,17 +158,24 @@ export const sendMembershipRequest: MutationResolvers["sendMembershipRequest"] =
       await cacheOrganizations([updatedOrganization]);
     }
 
-    // add membership request to user
-    await User.updateOne(
-      {
-        _id: context.userId,
-      },
+    // Updating User
+    const updateResult = await User.findByIdAndUpdate(
+      context.userId,
       {
         $push: {
           membershipRequests: createdMembershipRequest._id,
         },
       },
+      { new: true, runValidators: true },
     );
+
+    if (!updateResult) {
+      throw new Error("Failed to update user with membership request");
+    }
+
+    // Fetch the updated user to confirm the change
+    const updatedUser = await User.findById(context.userId).lean();
+    console.log("Updated user:", updatedUser);
 
     return createdMembershipRequest.toObject();
   };
