@@ -5,7 +5,7 @@ import {
 	MutationCreatePostVoteInput,
 	mutationCreatePostVoteInputSchema,
 } from "~/src/graphql/inputs/MutationCreatePostVoteInput";
-import { Post } from "~/src/graphql/types/Post/Post";
+import { PostVote } from "~/src/graphql/types/Post/PostVote";
 import { TalawaGraphQLError } from "~/src/utilities/TalawaGraphQLError";
 import envConfig from "~/src/utilities/graphqLimits";
 const mutationCreatePostVoteArgumentsSchema = z.object({
@@ -136,6 +136,20 @@ builder.mutationField("createPostVote", (t) =>
 				});
 			}
 
+			if (existingPostVote !== undefined) {
+				throw new TalawaGraphQLError({
+					extensions: {
+						code: "forbidden_action_on_arguments_associated_resources",
+						issues: [
+							{
+								argumentPath: ["input", "postId"],
+								message: "You have already voted this post.",
+							},
+						],
+					},
+				});
+			}
+
 			const currentUserOrganizationMembership =
 				existingPost.organization.membershipsWhereOrganization[0];
 
@@ -177,10 +191,22 @@ builder.mutationField("createPostVote", (t) =>
 				});
 			}
 
-			return Object.assign(existingPost, {
-				attachments: existingPost.attachmentsWherePost,
-			});
+			if (createdPostVote.creatorId === null) {
+				ctx.log.error(
+					"Inserted post vote has a null creatorId, which violates the GraphQL schema.",
+				);
+				throw new TalawaGraphQLError({
+					extensions: {
+						code: "unexpected",
+					},
+				});
+			}
+
+			return {
+				...createdPostVote,
+				creatorId: createdPostVote.creatorId,
+			};
 		},
-		type: Post,
+		type: PostVote,
 	}),
 );

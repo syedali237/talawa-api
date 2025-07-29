@@ -1647,7 +1647,7 @@ type Mutation {
   createPost(input: MutationCreatePostInput!): Post
 
   """Mutation field to create a post vote."""
-  createPostVote(input: MutationCreatePostVoteInput!): Post
+  createPostVote(input: MutationCreatePostVoteInput!): PostVote
 
   """Mutation field to create a presigned URL for uploading a file."""
   createPresignedUrl(input: MutationCreatePresignedUrlInput!): UploadUrlResponse
@@ -3627,6 +3627,21 @@ type PostUpVotersConnection {
 type PostUpVotersConnectionEdge {
   cursor: String!
   node: User
+}
+
+"""Object representing a vote on a post."""
+type PostVote {
+  """Global identifier of the vote creator."""
+  creatorId: ID
+
+  """Global identifier of the vote."""
+  id: ID
+
+  """Global identifier of the post that is voted."""
+  postId: ID
+
+  """Type of the vote."""
+  type: PostVoteType
 }
 
 """Possible variants of the type of a vote on a post."""

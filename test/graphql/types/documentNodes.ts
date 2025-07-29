@@ -1234,7 +1234,6 @@ export const Mutation_createPostVote = gql(`
   mutation Mutation_createPostVote($input:MutationCreatePostVoteInput!){
     createPostVote(input : $input){
       id
-      caption
     }
   }`);
 

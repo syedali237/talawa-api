@@ -152,8 +152,8 @@ declare module 'gql.tada' {
       TadaDocumentNode<{ rejectMembershipRequest: { success: boolean | null; message: string | null; } | null; }, { input: { membershipRequestId: string; }; }, void>;
     "\n  query Query_hasUserVoted($input: QueryHasUserVotedInput!) {\n    hasUserVoted(input: $input)\n    {\n      voteType\n      hasVoted\n    }\n  }\n":
       TadaDocumentNode<{ hasUserVoted: { voteType: "down_vote" | "up_vote" | null; hasVoted: boolean; } | null; }, { input: { postId: string; }; }, void>;
-    "\n  mutation Mutation_createPostVote($input:MutationCreatePostVoteInput!){\n    createPostVote(input : $input){\n      id\n      caption\n    }\n  }":
-      TadaDocumentNode<{ createPostVote: { id: string; caption: string | null; } | null; }, { input: { type: "down_vote" | "up_vote"; postId: string; }; }, void>;
+    "\n  mutation Mutation_createPostVote($input:MutationCreatePostVoteInput!){\n    createPostVote(input : $input){\n      id\n    }\n  }":
+      TadaDocumentNode<{ createPostVote: { id: string | null; } | null; }, { input: { type: "down_vote" | "up_vote"; postId: string; }; }, void>;
     "\n  mutation Mutation_createEventVolunteerGroup($input: MutationCreateEventVolunteerGroupInput!){\n    createEventVolunteerGroup(input: $input) {\n      id\n      name\n    }\n  }":
       TadaDocumentNode<{ createEventVolunteerGroup: { id: string; name: string | null; } | null; }, { input: { name: string; maxVolunteerCount: number; leaderId: string; eventId: string; }; }, void>;
     "\n    mutation Mutation_updateEventVolunteerGroup($input: MutationUpdateEventVolunteerGroupInput!){\n      updateEventVolunteerGroup(input: $input) {\n        id\n        name\n        maxVolunteerCount\n      }\n    }":
